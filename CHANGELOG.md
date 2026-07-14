@@ -2,6 +2,11 @@
 
 All notable changes to Caelus Terminal are documented here.
 
+## 0.1.6 — 2026-07-14
+
+### Fixed
+- Clarified that proprietary releases may be downloaded and run as official, unmodified software while source reuse, redistribution, and derivative products remain prohibited.
+
 ## 0.1.5 — 2026-07-14
 
 ### Changed

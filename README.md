@@ -17,7 +17,7 @@
 **Paste this one line into Terminal on macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.5/scripts/install-macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.6/scripts/install-macos.sh | bash
 ```
 
 The installer checks for a supported Python first. If it is missing or too old, it installs Homebrew using Homebrew’s official installer, then installs Python 3.11 and continues automatically. macOS may ask the user for an administrator password during Homebrew setup; Caelus never sees, stores, or transmits that password.
@@ -31,7 +31,7 @@ It then installs the `caelus` command, creates a dedicated local workspace at `~
 To remove **all Caelus-owned local files**—its isolated runtime, agent setup, local access gate, session data, logs, virtual environment, and the `caelus` launcher—paste this single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.5/scripts/uninstall-macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.6/scripts/uninstall-macos.sh | bash
 ```
 
 This is irreversible. It removes only `~/.caelus` and the `~/.local/bin/caelus` launcher when that launcher belongs to Caelus. It intentionally does **not** delete system-wide Python, Homebrew, or a separately used shared agent runtime.
