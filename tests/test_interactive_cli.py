@@ -34,8 +34,9 @@ def test_interactive_mode_uses_persistent_session_and_streams_tool_activity(caps
     assert client.create_session.call_count == 1
     assert client.start_run.call_args.kwargs == {"session_id": "session-1"}
     assert client.stream_run.call_args.args == ("run-1",)
-    assert "[tool] web_search: Caelus docs" in output
+    assert "• web_search: Caelus docs" in output
     assert "Connected reply" in output
+    assert "MESSAGE CAELUS" in output
 
 
 def test_interactive_mode_resumes_persisted_session_messages(capsys):
@@ -59,5 +60,7 @@ def test_interactive_mode_resumes_persisted_session_messages(capsys):
     assert exit_code == 0
     client.create_session.assert_not_called()
     client.session_messages.assert_called_once_with("session-1")
-    assert "You: Earlier question" in output
-    assert "default: Earlier answer" in output
+    assert "YOU" in output
+    assert "Earlier question" in output
+    assert "CAELUS" in output
+    assert "Earlier answer" in output

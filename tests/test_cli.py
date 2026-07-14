@@ -25,5 +25,5 @@ def test_demo_command_prints_matrix_terminal_dashboard(capsys):
     output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "CAELUS // ACTIVE AGENT: NOVA" in output
-    assert "[tool] Reading runtime capabilities" in output
+    assert "CAELUS AGENT" in output
+    assert "• Reading runtime capabilities" in output

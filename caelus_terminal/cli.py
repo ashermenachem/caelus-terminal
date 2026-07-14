@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 from getpass import getpass
 from pathlib import Path
+import shutil
 import sys
+import time
 
 from .access_gate import (
     AccessGateError,
@@ -36,6 +38,25 @@ from .replay import (
 )
 from .templates import TemplateValidationError, export_template, import_template
 from .trajectory import TrajectoryDriver, TrajectoryError, recording_path
+
+
+def _redraw_chat(state: DashboardState, *, busy: bool = False) -> int:
+    width = max(60, shutil.get_terminal_size(fallback=(100, 30)).columns)
+    if sys.stdout.isatty():
+        print("\033[2J\033[H", end="")
+    print(render_dashboard(state, width=width, show_tool_activity=True, busy=busy, show_composer=False))
+    return width
+
+
+def _read_composer(width: int) -> str:
+    border = "─" * (width - 2)
+    print("┌" + " MESSAGE CAELUS ".center(width - 2, "─") + "┐")
+    print(f"│ {'Type your message. /help for controls, /quit to exit.':<{width - 4}} │")
+    print("├" + border + "┤")
+    try:
+        return input("│ You › ").strip()
+    finally:
+        print("└" + border + "┘")
 
 
 def demo_state() -> DashboardState:
@@ -302,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--endpoint", help="local Hermes API endpoint ending in /v1")
     parser.add_argument("--api-key", help="local Hermes API server key")
-    parser.add_argument("--agent", default="default", help="Caelus agent conversation name")
+    parser.add_argument("--agent", default="Caelus", help="Caelus agent conversation name")
     parser.add_argument("--session-id", help="resume an existing Hermes session")
     parser.add_argument("--chat", help="send one message through the configured runtime")
     parser.add_argument("--interactive", action="store_true", help="start an interactive terminal chat")
@@ -324,27 +345,30 @@ def main(argv: list[str] | None = None) -> int:
             mcp_servers=runtime.mcp_servers,
             tools=runtime.tools,
         )
-        print(render_dashboard(state))
+        started_at = time.monotonic()
         if args.session_id:
             session_id = args.session_id
             for message in client.session_messages(session_id):
                 role = message.get("role")
                 if role in {"user", "assistant"} and message.get("content"):
                     state.transcript.append(("You" if role == "user" else args.agent, message["content"]))
-            print(render_dashboard(state))
         else:
             session_id = client.create_session(args.agent)["id"]
-        print("Type /quit to end the Caelus chat session. Press Ctrl-C to stop an active run.")
         while True:
-            message = input("\n> ").strip()
+            state.runtime_seconds = int(time.monotonic() - started_at)
+            try:
+                message = _read_composer(_redraw_chat(state))
+            except EOFError:
+                return 0
             if message in {"/quit", "/exit"}:
                 return 0
             if message == "/help":
-                print("\n" + runtime_help())
+                state.transcript.append((args.agent, runtime_help()))
                 continue
             if not message:
                 continue
             state.transcript.append(("You", message))
+            _redraw_chat(state, busy=True)
             run_id = client.start_run(message, session_id=session_id)
             try:
                 for event in client.stream_run(run_id):
@@ -353,6 +377,7 @@ def main(argv: list[str] | None = None) -> int:
                         tool = event.get("tool", "tool")
                         detail = event.get("preview") or event.get("error") or ""
                         state.tool_activity.append(f"{tool}: {detail}".rstrip(": "))
+                        _redraw_chat(state, busy=True)
                     if event_type == "run.completed":
                         state.transcript.append((args.agent, event.get("output", "")))
                     if event_type in {"run.failed", "run.cancelled"}:
@@ -360,7 +385,6 @@ def main(argv: list[str] | None = None) -> int:
             except KeyboardInterrupt:
                 client.stop_run(run_id)
                 state.transcript.append((args.agent, "Cancellation requested."))
-            print("\n" + render_dashboard(state, show_tool_activity=True))
 
     if args.chat:
         if not args.endpoint or not args.api_key:

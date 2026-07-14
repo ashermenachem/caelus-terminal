@@ -46,6 +46,27 @@ def test_bootstrap_creates_an_isolated_loopback_api_runtime(tmp_path):
     assert runtime_home.parent.stat().st_mode & 0o777 == 0o700
 
 
+def test_bootstrap_creates_a_generic_caelus_identity_without_personal_state(tmp_path):
+    runtime_home = tmp_path / "caelus" / "runtime"
+
+    bootstrap_runtime(runtime_home, token_factory=lambda: "test-key")
+
+    identity = (runtime_home / "SOUL.md").read_text()
+    assert "Your name is Caelus" in identity
+    assert "Hermes Agent runtime" in identity
+    assert "personal memory" not in identity.lower()
+
+
+def test_bootstrap_replaces_the_default_hermes_identity_but_not_user_state(tmp_path):
+    runtime_home = tmp_path / "caelus" / "runtime"
+    runtime_home.mkdir(parents=True)
+    (runtime_home / "SOUL.md").write_text("Your name is Hermes.")
+
+    bootstrap_runtime(runtime_home, token_factory=lambda: "test-key")
+
+    assert "Your name is Caelus" in (runtime_home / "SOUL.md").read_text()
+
+
 def test_bootstrap_reuses_existing_api_key_without_replacing_private_state(tmp_path):
     runtime_home = tmp_path / "caelus" / "runtime"
     bootstrap_runtime(runtime_home, token_factory=lambda: "first-key")

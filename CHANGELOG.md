@@ -2,6 +2,13 @@
 
 All notable changes to Caelus Agent are documented here.
 
+## 0.1.11 — 2026-07-14
+
+### Fixed
+- Rebuilt the terminal chat as a stable redrawn conversation view with distinct user/agent messages, wrapping, visible working state, and a dedicated message composer.
+- New Caelus runtimes now receive a generic product identity that introduces the agent as Caelus while accurately crediting Hermes Agent as the runtime.
+- An existing default Hermes identity is migrated to Caelus without touching runtime sessions, provider configuration, or other user state.
+
 ## 0.1.10 — 2026-07-14
 
 ### Fixed

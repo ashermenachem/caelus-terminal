@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "caelus-agent"
-version = "0.1.10"
+version = "0.1.11"
 description = "A local-first agent command center powered by Hermes Agent"
 readme = "README.md"
 requires-python = ">=3.9"

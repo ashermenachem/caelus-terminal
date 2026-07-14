@@ -12,6 +12,17 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_PORT = 8642
+_CAELUS_IDENTITY_MARKER = "<!-- Caelus managed identity -->"
+_CAELUS_IDENTITY = f"""{_CAELUS_IDENTITY_MARKER}
+# Caelus
+
+Your name is Caelus. You are the user's private AI operator in Caelus Agent.
+Be direct, capable, discreet, and honest about what you completed versus what remains unverified.
+
+You operate through the Hermes Agent runtime, which supplies the agent loop, tools, skills,
+and provider connection. Do not introduce yourself as Hermes; Hermes is the runtime, while
+Caelus is the user-facing agent identity.
+"""
 
 
 def default_caelus_home() -> Path:
@@ -164,6 +175,15 @@ def bootstrap_runtime(
         os.chmod(caelus_home, 0o700)
     runtime_home.mkdir(mode=0o700, exist_ok=True)
     os.chmod(runtime_home, 0o700)
+
+    identity_path = runtime_home / "SOUL.md"
+    existing_identity = identity_path.read_text(errors="replace") if identity_path.exists() else ""
+    is_default_hermes_identity = (
+        "your name is hermes" in existing_identity.lower() and "caelus" not in existing_identity.lower()
+    )
+    if not existing_identity or _CAELUS_IDENTITY_MARKER in existing_identity or is_default_hermes_identity:
+        identity_path.write_text(_CAELUS_IDENTITY)
+        os.chmod(identity_path, 0o600)
 
     env_path = runtime_home / ".env"
     values = _env_values(env_path)
