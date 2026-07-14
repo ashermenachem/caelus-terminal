@@ -20,9 +20,55 @@ class HermesClient:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
 
-    def _get(self, path: str) -> dict:
+    def _root_url(self, path: str) -> str:
+        return f"{self.base_url.removesuffix('/v1')}/{path.lstrip('/')}"
+
+    def _post(self, url: str, payload: dict) -> dict:
         request = Request(
-            f"{self.base_url}/{path.lstrip('/')}",
+            url,
+            data=json.dumps(payload).encode(),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            method="POST",
+        )
+        with urlopen(request, timeout=120) as response:  # nosec B310: local endpoint selected by user
+            return json.loads(response.read())
+
+    def create_session(self, title: str) -> dict:
+        return self._post(self._root_url("api/sessions"), {"title": title})["session"]
+
+    def session_messages(self, session_id: str) -> list[dict]:
+        response = self._get(self._root_url(f"api/sessions/{session_id}/messages"))
+        return response.get("data", [])
+
+    def start_run(self, message: str, *, session_id: str) -> str:
+        response = self._post(
+            f"{self.base_url}/runs", {"input": message, "session_id": session_id}
+        )
+        return response["run_id"]
+
+    def stop_run(self, run_id: str) -> None:
+        self._post(f"{self.base_url}/runs/{run_id}/stop", {})
+
+    def stream_run(self, run_id: str):
+        request = Request(
+            f"{self.base_url}/runs/{run_id}/events",
+            headers={"Authorization": f"Bearer {self.api_key}", "Accept": "text/event-stream"},
+            method="GET",
+        )
+        with urlopen(request, timeout=120) as response:  # nosec B310: local endpoint selected by user
+            for raw_line in iter(response.readline, b""):
+                line = raw_line.decode().strip()
+                if line.startswith("data: "):
+                    yield json.loads(line[6:])
+
+    def _get(self, path: str) -> dict:
+        url = path if path.startswith(("http://", "https://")) else f"{self.base_url}/{path.lstrip('/')}"
+        request = Request(
+            url,
             headers={"Authorization": f"Bearer {self.api_key}"},
             method="GET",
         )
