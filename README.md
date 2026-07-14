@@ -17,7 +17,7 @@
 **Paste this one line into Terminal on macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.4/scripts/install-macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.5/scripts/install-macos.sh | bash
 ```
 
 The installer checks for a supported Python first. If it is missing or too old, it installs Homebrew using Homebrew’s official installer, then installs Python 3.11 and continues automatically. macOS may ask the user for an administrator password during Homebrew setup; Caelus never sees, stores, or transmits that password.
@@ -31,7 +31,7 @@ It then installs the `caelus` command, creates a dedicated local workspace at `~
 To remove **all Caelus-owned local files**—its isolated runtime, agent setup, local access gate, session data, logs, virtual environment, and the `caelus` launcher—paste this single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.4/scripts/uninstall-macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ashermenachem/caelus-terminal/v0.1.5/scripts/uninstall-macos.sh | bash
 ```
 
 This is irreversible. It removes only `~/.caelus` and the `~/.local/bin/caelus` launcher when that launcher belongs to Caelus. It intentionally does **not** delete system-wide Python, Homebrew, or a separately used shared agent runtime.
@@ -179,4 +179,8 @@ PYTHON="$PWD/.venv/bin/python" bash scripts/release-check.sh
 
 The release check runs the full suite, builds the distributable wheel, verifies the legal files and shipped modules, tests a fresh wheel install, and tests the macOS installer in isolated temporary paths. GitHub Actions runs the same gate on pull requests and updates to `main`.
 
-See [CHANGELOG.md](CHANGELOG.md) for version history, [LICENSE](LICENSE) for the MIT license, and [NOTICE](NOTICE) for third-party attribution.
+See [CHANGELOG.md](CHANGELOG.md) for version history, [LICENSE](LICENSE) for the proprietary Caelus Terminal terms, and [NOTICE](NOTICE) for third-party attribution.
+
+### Licensing note
+
+Caelus Terminal releases starting with `v0.1.5` are proprietary and all rights are reserved. Earlier public releases were published under MIT; those earlier grants are not retroactively revoked. This repository remains public for installation and evaluation, not for reuse or redistribution.

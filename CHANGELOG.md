@@ -2,6 +2,11 @@
 
 All notable changes to Caelus Terminal are documented here.
 
+## 0.1.5 — 2026-07-14
+
+### Changed
+- Future Caelus Terminal releases are proprietary and all rights are reserved. Earlier MIT-licensed releases retain their original license grants.
+
 ## 0.1.4 — 2026-07-14
 
 ### Added

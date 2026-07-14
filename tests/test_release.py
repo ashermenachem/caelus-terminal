@@ -4,15 +4,17 @@ from pathlib import Path
 ROOT = Path(__file__).parents[1]
 
 
-def test_release_metadata_and_notices_disclose_hermes_runtime():
+def test_release_metadata_and_notices_disclose_runtime_and_proprietary_caelus_terms():
     pyproject = (ROOT / "pyproject.toml").read_text()
     license_text = (ROOT / "LICENSE").read_text()
     notice = (ROOT / "NOTICE").read_text()
 
     assert 'readme = "README.md"' in pyproject
-    assert 'license = {text = "MIT"}' in pyproject
+    assert 'license = {text = "Proprietary"}' in pyproject
+    assert 'License :: Other/Proprietary License' in pyproject
     assert 'packages = ["caelus_terminal"]' in pyproject
-    assert "MIT License" in license_text
+    assert "All Rights Reserved" in license_text
+    assert "No permission is granted" in license_text
     assert "Caelus Terminal" in notice
     assert "Hermes Agent" in notice
     assert "Nous Research" in notice
