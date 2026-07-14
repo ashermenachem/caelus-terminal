@@ -24,6 +24,15 @@ from .runtime import (
     start_runtime,
     stop_runtime,
 )
+from .replay import (
+    ReplayValidationError,
+    build_run_instruction,
+    create_recipe,
+    default_recipes_dir,
+    load_recipe,
+    render_preview,
+    write_receipt,
+)
 from .templates import TemplateValidationError, export_template, import_template
 
 
@@ -141,6 +150,95 @@ def default_connection_args(runtime_home: Path | None = None) -> list[str]:
     ]
 
 
+def replay_control(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Teach, preview, and safely run Caelus Replay recipes")
+    subcommands = parser.add_subparsers(dest="action", required=True)
+
+    teach = subcommands.add_parser("teach", help="save a guided, read-only browser replay")
+    teach.add_argument("name", help="lowercase replay name, such as daily-assignments")
+    teach.add_argument("--recipes-dir", type=Path, default=default_recipes_dir())
+    teach.add_argument("--domain", action="append", required=True, help="allowed hostname; repeatable")
+    teach.add_argument("--step", action="append", required=True, help="read-only workflow step; repeatable")
+    teach.add_argument("--verify", required=True, help="observable success condition")
+
+    for action in ("preview", "run"):
+        command = subcommands.add_parser(action)
+        command.add_argument("name")
+        command.add_argument("--recipes-dir", type=Path, default=default_recipes_dir())
+        if action == "run":
+            command.add_argument("--endpoint", help="local Hermes API endpoint ending in /v1")
+            command.add_argument("--api-key", help="local Hermes API server key")
+
+    args = parser.parse_args(argv)
+    try:
+        if args.action == "teach":
+            recipe = create_recipe(
+                args.recipes_dir,
+                name=args.name,
+                domains=args.domain,
+                steps=args.step,
+                verification=args.verify,
+            )
+            print(f"Taught replay: {recipe.name}")
+            print(f"Saved: {args.recipes_dir / (recipe.name + '.json')}")
+            print("Policy: read-only. Replay will never submit, message, purchase, delete, publish, or enter secrets.")
+            return 0
+
+        recipe = load_recipe(args.recipes_dir, args.name)
+        if args.action == "preview":
+            print(render_preview(recipe))
+            return 0
+
+        if not args.endpoint and not args.api_key:
+            runtime_home = Path.home() / ".caelus" / "runtime"
+            args.endpoint = runtime_endpoint(runtime_home)
+            args.api_key = runtime_api_key(runtime_home)
+        elif not args.endpoint or not args.api_key:
+            parser.error("replay run requires both --endpoint and --api-key together")
+        client = HermesClient(args.endpoint, args.api_key)
+        session_id = client.create_session(f"Replay: {recipe.name}")["id"]
+        run_id = client.start_run(build_run_instruction(recipe), session_id=session_id)
+        tool_events: list[str] = []
+        output = ""
+        status = "failed"
+        try:
+            for event in client.stream_run(run_id):
+                event_type = event.get("event")
+                if event_type in {"tool.started", "tool.completed", "tool.failed"}:
+                    tool = event.get("tool", "tool")
+                    detail = event.get("preview") or event.get("error") or ""
+                    tool_events.append(f"{tool}: {detail}".rstrip(": "))
+                if event_type == "run.completed":
+                    status = "completed"
+                    output = event.get("output", "")
+                if event_type == "run.cancelled":
+                    status = "cancelled"
+                if event_type == "run.failed":
+                    output = event.get("error", "")
+        except KeyboardInterrupt:
+            client.stop_run(run_id)
+            status = "cancelled"
+            output = "Cancellation requested."
+        receipt = write_receipt(
+            args.recipes_dir,
+            recipe,
+            run_id=run_id,
+            status=status,
+            tool_events=tool_events,
+            output=output,
+        )
+        status_label = {"completed": "COMPLETE", "failed": "FAILED", "cancelled": "CANCELLED"}[status]
+        print(f"REPLAY {status_label} — {recipe.name}")
+        print(f"Verification required: {recipe.verification}")
+        print(f"Receipt: {receipt}")
+        if output:
+            print(output)
+        return 0 if status == "completed" else 1
+    except ReplayValidationError as exc:
+        parser.error(str(exc))
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(argv) if argv is not None else sys.argv[1:]
     if not argv:
@@ -160,6 +258,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     if argv[:1] == ["gate"]:
         return gate_control(argv[1:], gate_path=gate_path)
+    if argv[:1] == ["replay"]:
+        return replay_control(argv[1:])
     if argv and argv[:2] == ["runtime", "init"]:
         return runtime_init(argv[2:])
     if argv and argv[:2] == ["runtime", "start"]:

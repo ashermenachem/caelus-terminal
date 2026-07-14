@@ -2,6 +2,14 @@
 
 All notable changes to Caelus Agent are documented here.
 
+## 0.1.8 — 2026-07-14
+
+### Added
+- Caelus Replay v0: guided, hostname-restricted read-only workflow recipes with previews, guarded Hermes runs, and private run receipts.
+
+### Safety
+- Replay v0 rejects credential-like recipe content and instructs the runtime not to submit, message, purchase, delete, publish, change settings, or handle secrets.
+
 ## 0.1.7 — 2026-07-14
 
 ### Changed
