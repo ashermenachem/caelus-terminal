@@ -7,7 +7,7 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 1
 fi
 
-CAELUS_VERSION="${CAELUS_VERSION:-v0.1.9}"
+CAELUS_VERSION="${CAELUS_VERSION:-v0.1.10}"
 REPOSITORY_URL="https://github.com/ashermenachem/caelus-agent"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 SOURCE_DIR="${CAELUS_SOURCE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
@@ -74,6 +74,22 @@ ask_yes_no() {
   [[ -z "$response" || "$response" =~ ^[Yy]([Ee][Ss])?$ ]]
 }
 
+ensure_bin_dir_on_path() {
+  local profile entry
+  case "$(basename "${SHELL:-zsh}")" in
+    zsh) profile="$HOME/.zprofile" ;;
+    bash) profile="$HOME/.bash_profile" ;;
+    *) profile="$HOME/.profile" ;;
+  esac
+  entry="export PATH=\"$BIN_DIR:\$PATH\""
+  touch "$profile"
+  if ! grep -Fqx "$entry" "$profile"; then
+    printf '\n# Added by Caelus Agent\n%s\n' "$entry" >> "$profile"
+    echo "Caelus added $BIN_DIR to your shell PATH."
+  fi
+  export PATH="$BIN_DIR:$PATH"
+}
+
 if [[ ! -f "$SOURCE_DIR/pyproject.toml" ]]; then
   command -v curl >/dev/null || { echo "curl is required for web installation." >&2; exit 1; }
   command -v tar >/dev/null || { echo "tar is required for web installation." >&2; exit 1; }
@@ -90,7 +106,14 @@ mkdir -p "$CAELUS_HOME" "$BIN_DIR"
 "$PYTHON" -m venv "$VENV"
 "$VENV/bin/python" -m pip install --upgrade pip >/dev/null
 "$VENV/bin/python" -m pip install --force-reinstall --no-deps "$SOURCE_DIR" >/dev/null
-ln -sfn "$VENV/bin/caelus" "$BIN_DIR/caelus"
+cat > "$BIN_DIR/caelus" <<LAUNCHER
+#!/usr/bin/env bash
+# CAELUS_LAUNCHER=1
+export CAELUS_HOME="$CAELUS_HOME"
+exec "$VENV/bin/caelus" "\$@"
+LAUNCHER
+chmod 700 "$BIN_DIR/caelus"
+ensure_bin_dir_on_path
 
 # This creates only a dedicated local runtime and loopback API key. It never
 # clones another local profile or starts provider authentication in that profile.
@@ -124,6 +147,8 @@ fi
 if ask_yes_no "Start Caelus now?"; then
   "$BIN_DIR/caelus" runtime start
   echo "Ready. Run: caelus"
+  echo "For this same Terminal, run: export PATH=\"$BIN_DIR:\$PATH\""
 else
-  echo "When you are ready, run: caelus runtime start && caelus"
+  echo "For this same Terminal, run: export PATH=\"$BIN_DIR:\$PATH\""
+  echo "Then run: caelus runtime start && caelus"
 fi

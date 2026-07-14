@@ -53,3 +53,12 @@ def test_gate_set_command_uses_hidden_confirmation_and_is_exempt_from_gate(tmp_p
     assert gate_path.is_file()
     assert "test-only-password" not in gate_path.read_text()
     assert "Access gate configured." in capsys.readouterr().out
+
+
+def test_default_gate_path_follows_the_private_caelus_home_environment(tmp_path, monkeypatch):
+    from caelus_terminal.access_gate import default_gate_path
+
+    caelus_home = tmp_path / "custom-caelus"
+    monkeypatch.setenv("CAELUS_HOME", str(caelus_home))
+
+    assert default_gate_path() == caelus_home / "access-gate.json"

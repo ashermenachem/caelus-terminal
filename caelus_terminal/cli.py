@@ -18,6 +18,7 @@ from .helptext import runtime_help
 from .runtime import (
     api_is_healthy,
     bootstrap_runtime,
+    default_runtime_home,
     runtime_endpoint,
     runtime_api_key,
     runtime_is_running,
@@ -55,7 +56,7 @@ def runtime_init(argv: list[str]) -> int:
     parser.add_argument(
         "--runtime-home",
         type=Path,
-        default=Path.home() / ".caelus" / "runtime",
+        default=default_runtime_home(),
         help="dedicated HERMES_HOME for Caelus",
     )
     parser.add_argument("--runtime-port", type=int, default=8642)
@@ -74,7 +75,7 @@ def runtime_control(argv: list[str], *, action: str) -> int:
     parser.add_argument(
         "--runtime-home",
         type=Path,
-        default=Path.home() / ".caelus" / "runtime",
+        default=default_runtime_home(),
         help="dedicated HERMES_HOME for Caelus",
     )
     args = parser.parse_args(argv)
@@ -141,7 +142,7 @@ def gate_control(argv: list[str], *, gate_path: Path) -> int:
 
 def default_connection_args(runtime_home: Path | None = None) -> list[str]:
     """Build the private, local connection used by a plain ``caelus`` launch."""
-    home = runtime_home or Path.home() / ".caelus" / "runtime"
+    home = runtime_home or default_runtime_home()
     return [
         "--endpoint",
         runtime_endpoint(home),
@@ -212,7 +213,7 @@ def replay_control(argv: list[str]) -> int:
             return 0
 
         if not args.endpoint and not args.api_key:
-            runtime_home = Path.home() / ".caelus" / "runtime"
+            runtime_home = default_runtime_home()
             args.endpoint = runtime_endpoint(runtime_home)
             args.api_key = runtime_api_key(runtime_home)
         elif not args.endpoint or not args.api_key:

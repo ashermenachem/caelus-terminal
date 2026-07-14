@@ -15,7 +15,8 @@ if [[ -f "$PID_FILE" ]]; then
   fi
 fi
 
-if [[ -L "$LAUNCHER" && "$(readlink "$LAUNCHER")" == "$TARGET" ]]; then
+if [[ -L "$LAUNCHER" && "$(readlink "$LAUNCHER")" == "$TARGET" ]] || \
+   [[ -f "$LAUNCHER" && "$(grep -Fxc '# CAELUS_LAUNCHER=1' "$LAUNCHER" || true)" == "1" ]]; then
   rm -f "$LAUNCHER"
 fi
 

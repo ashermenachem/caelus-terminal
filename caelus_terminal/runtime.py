@@ -14,6 +14,14 @@ from urllib.request import Request, urlopen
 DEFAULT_PORT = 8642
 
 
+def default_caelus_home() -> Path:
+    return Path(os.environ.get("CAELUS_HOME", Path.home() / ".caelus")).expanduser()
+
+
+def default_runtime_home() -> Path:
+    return default_caelus_home() / "runtime"
+
+
 @dataclass(frozen=True)
 class RuntimeDetails:
     home: Path

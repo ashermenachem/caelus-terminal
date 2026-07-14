@@ -2,6 +2,13 @@
 
 All notable changes to Caelus Agent are documented here.
 
+## 0.1.10 — 2026-07-14
+
+### Fixed
+- The macOS installer now writes a home-bound `caelus` launcher and adds its bin directory to the user’s login-shell PATH.
+- The launcher's private `CAELUS_HOME` now consistently scopes the runtime, access gate, and plain `caelus` startup path.
+- The installer now prints the exact one-line PATH refresh command needed in the current Terminal after a piped install.
+
 ## 0.1.9 — 2026-07-14
 
 ### Added

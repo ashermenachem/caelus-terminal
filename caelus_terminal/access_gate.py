@@ -49,7 +49,7 @@ def configure_gate(
 
 
 def default_gate_path() -> Path:
-    return Path.home() / ".caelus" / "access-gate.json"
+    return Path(os.environ.get("CAELUS_HOME", Path.home() / ".caelus")).expanduser() / "access-gate.json"
 
 
 def gate_is_configured(gate_path: Path) -> bool:

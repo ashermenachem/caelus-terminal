@@ -4,9 +4,19 @@ from pathlib import Path
 from caelus_terminal.runtime import (
     bootstrap_runtime,
     build_runtime_env,
+    default_caelus_home,
+    default_runtime_home,
     runtime_api_key,
     runtime_endpoint,
 )
+
+
+def test_default_caelus_paths_follow_the_launcher_environment(tmp_path, monkeypatch):
+    home = tmp_path / "custom-caelus"
+    monkeypatch.setenv("CAELUS_HOME", str(home))
+
+    assert default_caelus_home() == home
+    assert default_runtime_home() == home / "runtime"
 
 
 def test_runtime_adapter_uses_a_separate_caelus_test_home(tmp_path):

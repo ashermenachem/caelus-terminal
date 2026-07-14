@@ -17,7 +17,7 @@ def test_macos_installer_bootstraps_only_an_isolated_caelus_runtime():
 def test_macos_installer_can_bootstrap_a_versioned_release_when_piped_from_the_web():
     script = SCRIPT.read_text()
 
-    assert 'CAELUS_VERSION="${CAELUS_VERSION:-v0.1.9}"' in script
+    assert 'CAELUS_VERSION="${CAELUS_VERSION:-v0.1.10}"' in script
     assert "archive/refs/tags/$CAELUS_VERSION.tar.gz" in script
     assert "tar -xz" in script
     assert "CAELUS_SOURCE_DIR" in script
@@ -35,6 +35,15 @@ def test_macos_installer_bootstraps_python_and_offers_interactive_gate_and_provi
     assert "Homebrew is required to install Python automatically" in script
     assert '"$BIN_DIR/caelus" gate set < /dev/tty' in script
     assert 'HERMES_HOME="$CAELUS_HOME/runtime" hermes setup < /dev/tty' in script
+
+
+def test_macos_installer_writes_a_home_bound_launcher_and_persists_its_bin_directory():
+    script = SCRIPT.read_text()
+
+    assert 'cat > "$BIN_DIR/caelus" <<LAUNCHER' in script
+    assert 'export CAELUS_HOME=' in script
+    assert 'ensure_bin_dir_on_path' in script
+    assert 'Caelus added $BIN_DIR to your shell PATH.' in script
 
 
 UNINSTALL_SCRIPT = Path(__file__).parents[1] / "scripts" / "uninstall-macos.sh"

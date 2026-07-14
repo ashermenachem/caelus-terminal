@@ -46,15 +46,21 @@ HOME="$SMOKE_ROOT/wheel-home" "$SMOKE_ROOT/wheel-venv/bin/caelus" --demo >/dev/n
 mkdir -p "$SMOKE_ROOT/fake-bin"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$SMOKE_ROOT/fake-bin/hermes"
 chmod +x "$SMOKE_ROOT/fake-bin/hermes"
+HOME="$SMOKE_ROOT/installer-user-home" \
+SHELL="/bin/zsh" \
 CAELUS_HOME="$SMOKE_ROOT/installer-home" \
 CAELUS_BIN_DIR="$SMOKE_ROOT/installer-bin" \
 CAELUS_SKIP_SETUP=1 \
 PYTHON="$PYTHON" \
 PATH="$SMOKE_ROOT/fake-bin:$PATH" \
 bash "$ROOT/scripts/install-macos.sh" >/dev/null
+grep -Fqx "export PATH=\"$SMOKE_ROOT/installer-bin:\$PATH\"" "$SMOKE_ROOT/installer-user-home/.zprofile"
+test "$(HOME="$SMOKE_ROOT/installer-user-home" SHELL=/bin/zsh /bin/zsh -lc 'command -v caelus')" = "$SMOKE_ROOT/installer-bin/caelus"
+grep -Fqx '# CAELUS_LAUNCHER=1' "$SMOKE_ROOT/installer-bin/caelus"
 "$SMOKE_ROOT/installer-bin/caelus" --demo >/dev/null
 test -f "$SMOKE_ROOT/installer-home/runtime/.env"
 test ! -e "$SMOKE_ROOT/installer-home/runtime/auth.json"
+HOME="$SMOKE_ROOT/installer-user-home" \
 CAELUS_HOME="$SMOKE_ROOT/installer-home" \
 CAELUS_BIN_DIR="$SMOKE_ROOT/installer-bin" \
 bash "$ROOT/scripts/uninstall-macos.sh" >/dev/null
