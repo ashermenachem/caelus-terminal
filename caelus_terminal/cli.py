@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 import argparse
+from getpass import getpass
 from pathlib import Path
 import sys
 
+from .access_gate import (
+    AccessGateError,
+    configure_gate,
+    default_gate_path,
+    gate_is_configured,
+    require_access,
+)
 from .client import HermesClient
 from .dashboard import DashboardState, render_dashboard
 from .helptext import runtime_help
@@ -97,8 +105,41 @@ def template_control(argv: list[str], *, action: str) -> int:
     return 0
 
 
+def gate_control(argv: list[str], *, gate_path: Path) -> int:
+    parser = argparse.ArgumentParser(description="Configure the local Caelus access gate")
+    parser.add_argument("action", choices=["set", "status"])
+    args = parser.parse_args(argv)
+    if args.action == "status":
+        print("Access gate: configured" if gate_is_configured(gate_path) else "Access gate: not configured")
+        return 0
+    try:
+        if gate_is_configured(gate_path) and not require_access(gate_path, prompt=getpass, notify=print):
+            return 1
+        password = getpass("Set Caelus access password: ")
+        confirmation = getpass("Confirm Caelus access password: ")
+        if password != confirmation:
+            print("Passwords did not match; access gate was not changed.")
+            return 1
+        configure_gate(gate_path, password)
+    except AccessGateError as exc:
+        print(f"Caelus access gate was not changed: {exc}")
+        return 1
+    print("Access gate configured.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(argv) if argv is not None else sys.argv[1:]
+    gate_path = default_gate_path()
+    if argv[:1] != ["gate"] and gate_is_configured(gate_path):
+        try:
+            if not require_access(gate_path, prompt=getpass, notify=print):
+                return 1
+        except AccessGateError as exc:
+            print(f"Caelus access gate is invalid: {exc}")
+            return 1
+    if argv[:1] == ["gate"]:
+        return gate_control(argv[1:], gate_path=gate_path)
     if argv and argv[:2] == ["runtime", "init"]:
         return runtime_init(argv[2:])
     if argv and argv[:2] == ["runtime", "start"]:

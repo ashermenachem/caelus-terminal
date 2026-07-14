@@ -77,6 +77,19 @@ caelus template import --input ./research.caelus-template --destination ./my-res
 
 A template recipient must configure their own Hermes provider credentials, runtime, memory, and integrations.
 
+## Local access gate
+
+Caelus can require a hidden password prompt before every normal command. Configure it locally — the password is never accepted as a command-line argument or saved in plaintext:
+
+```bash
+caelus gate set
+caelus gate status
+```
+
+The gate stores only a salted password verifier in `~/.caelus/access-gate.json` with private filesystem permissions. Each command invocation allows **three attempts**; after three failures, that invocation exits without running the requested Caelus command. Changing an existing gate requires the current password first.
+
+This is a **local deterrent, not real invite-only authentication**. Anyone who can modify the installed source/package, replace the gate file, or access the same macOS account can bypass it. A genuinely invite-only product requires server-side authentication and per-user accounts; Caelus does not claim otherwise.
+
 ## Privacy and attribution
 
 - No personal Caelus memory, credentials, sessions, or workflows are included.
